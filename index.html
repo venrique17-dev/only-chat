@@ -2,31 +2,50 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>ONLY CHAT</title>
+<title>ONLY CHAT 2.0</title>
 <style>
-body { font-family: Arial; background: #667eea; display:flex; justify-content:center; align-items:center; height: 100vh; margin:0; }
-.chat { width: 90%; max-width: 500px; height: 90vh; background: white; border-radius: 15px; display: flex; flex-direction: column; }
-.header { background: #667eea; color: white; padding: 15px; font-weight: bold; text-align: center; border-radius: 15px 15px 0 0; }
+body { font-family: Arial; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display:flex; justify-content:center; align-items:center; height: 100vh; margin:0; }
+.chat { width: 90%; max-width: 600px; height: 90vh; background: white; border-radius: 15px; display: flex; flex-direction: column; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+.header { background: #667eea; color: white; padding: 15px; font-weight: bold; text-align: center; border-radius: 15px 15px 0 0; position: relative; }
+.online { font-size: 12px; color: #90ee90; }
 .mensajes { flex: 1; overflow-y: auto; padding: 15px; background: #f8f9fa; }
-.msg { margin: 8px 0; padding: 10px; background: #e6f2ff; border-radius: 12px; }
-.input { display: flex; padding: 15px; border-top: 1px solid #ddd; }
-.input input { flex: 1; padding: 10px; border: 2px solid #ddd; border-radius: 20px; }
-.input button { margin-left: 10px; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 20px; cursor: pointer; }
+.msg { margin: 8px 0; padding: 10px 14px; background: #e6f2ff; border-radius: 18px; max-width: 80%; }
+.msg.mio { background: #667eea; color: white; margin-left: auto; }
+.input { display: flex; padding: 15px; border-top: 1px solid #ddd; gap: 10px; }
+.input input { flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 25px; }
+.input button { padding: 12px 20px; background: #667eea; color: white; border: none; border-radius: 25px; cursor: pointer; }
+.input button:hover { background: #764ba2; }
+.login { padding: 20px; text-align: center; }
+.login input { width: 80%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 2px solid #ddd; }
+.borrar { font-size: 10px; color: red; cursor: pointer; float: right; }
 </style>
 </head>
 <body>
 <div class="chat">
-  <div class="header">ONLY CHAT - EN LINEA 💬</div>
-  <div class="mensajes" id="mensajes"></div>
-  <div class="input">
-    <input type="text" id="inputMensaje" placeholder="Escribe un mensaje...">
-    <button id="btnEnviar">Enviar</button>
+  <div class="header">
+    ONLY CHAT 2.0 💬
+    <div class="online" id="online">Conectando...</div>
+  </div>
+  
+  <div id="loginScreen" class="login">
+    <h3>¿Cómo te llamas?</h3>
+    <input type="text" id="nombreInput" placeholder="Escribe tu nombre">
+    <button onclick="entrar()">Entrar al Chat</button>
+  </div>
+
+  <div id="chatScreen" style="display:none; flex:1; flex-direction:column;">
+    <div class="mensajes" id="mensajes"></div>
+    <div class="input">
+      <input type="text" id="inputMensaje" placeholder="Escribe un mensaje... 😊">
+      <button onclick="enviarMensaje()">Enviar</button>
+      <button onclick="mandarEmoji()">😂</button>
+    </div>
   </div>
 </div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getDatabase, ref, push, onChildAdded, onValue, remove, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyALTX2f3zGarr7QnXxknZlMzDgOcswSgLs",
@@ -40,29 +59,55 @@ body { font-family: Arial; background: #667eea; display:flex; justify-content:ce
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
-  const mensajesRef = ref(db, 'mensajes');
+  let miNombre = "";
 
-  const input = document.getElementById('inputMensaje');
-  const btn = document.getElementById('btnEnviar');
-  const divMensajes = document.getElementById('mensajes');
+  window.entrar = function() {
+    miNombre = document.getElementById('nombreInput').value || "Anónimo";
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('chatScreen').style.display = 'flex';
+    
+    const estadoRef = ref(db, 'online/' + miNombre);
+    set(estadoRef, true);
+    onValue(ref(db, 'online'), (snap) => {
+      const conectados = Object.keys(snap.val() || {}).length;
+      document.getElementById('online').innerText = conectados + " en línea";
+    });
+  }
 
-  function enviarMensaje() {
-    const texto = input.value;
+  window.enviarMensaje = function() {
+    const texto = document.getElementById('inputMensaje').value;
     if(texto.trim() !== ''){
-      push(mensajesRef, { usuario: "Prota", texto: texto, hora: new Date().toLocaleTimeString('es-CL', {hour: '2-digit', minute:'2-digit'}) });
-      input.value = '';
+      push(ref(db, 'mensajes'), { 
+        usuario: miNombre, 
+        texto: texto, 
+        hora: new Date().toLocaleTimeString('es-CL', {hour: '2-digit', minute:'2-digit'}) 
+      });
+      document.getElementById('inputMensaje').value = '';
     }
   }
-  btn.onclick = enviarMensaje;
-  input.addEventListener("keypress", e => { if(e.key === "Enter") enviarMensaje() });
 
-  onChildAdded(mensajesRef, (data) => {
+  window.mandarEmoji = function() {
+    document.getElementById('inputMensaje').value += "😂❤️🔥";
+  }
+
+  window.borrarMsg = function(id) {
+    remove(ref(db, 'mensajes/' + id));
+  }
+
+  document.getElementById('inputMensaje').addEventListener("keypress", e => { 
+    if(e.key === "Enter") enviarMensaje() 
+  });
+
+  onChildAdded(ref(db, 'mensajes'), (data) => {
     const msg = data.val();
+    const id = data.key;
     const div = document.createElement('div');
-    div.className = 'msg';
-    div.innerHTML = `<b>${msg.usuario}</b> <small>${msg.hora}</small><br>${msg.texto}`;
-    divMensajes.appendChild(div);
-    divMensajes.scrollTop = divMensajes.scrollHeight;
+    div.className = 'msg' + (msg.usuario === miNombre ? ' mio' : '');
+    div.innerHTML = `<b>${msg.usuario}</b> <small>${msg.hora}</small>
+      ${msg.usuario === miNombre ? `<span class="borrar" onclick="borrarMsg('${id}')">x</span>` : ''}
+      <br>${msg.texto}`;
+    document.getElementById('mensajes').appendChild(div);
+    document.getElementById('mensajes').scrollTop = document.getElementById('mensajes').scrollHeight;
   });
 </script>
 </body>
