@@ -95,6 +95,57 @@
     alert("Próximamente: WebPay $3.990/mes\nAquí conectaremos el pago y pondremos premium: true");
   }
 </script>
+<!-- BOTÓN MERCADOPAGO -->
+<script src="https://sdk.mercadopago.com/js/v2"></script>
+<button id="btnPremium" style="display:none; background:#00b1ea; color:white; padding:15px; border:none; border-radius:10px; width:100%; font-weight:bold; cursor:pointer; margin-top:10px;">
+    👑 HACERSE PREMIUM $3.990/mes
+</button>
 
+<script>
+const mp = new MercadoPago("APP_USR-b23a6e36-300c-494f-96bf-affa7ca21c07"); // PEGA TU PUBLIC KEY AQUI
+
+// Mostrar botón solo si NO es premium
+onAuthStateChanged(auth, async (user) => {
+  if(user){
+    const docSnap = await getDoc(doc(db, "usuarios", user.uid));
+    if(docSnap.exists() && docSnap.data().premium === false){
+      document.getElementById('btnPremium').style.display = 'block';
+    }
+  }
+});
+
+document.getElementById('btnPremium').onclick = async () => {
+    const user = auth.currentUser;
+    if(!user) return alert("Debes iniciar sesión");
+
+    // OJO: Esto no puede ir así en producción. El token va en Netlify Functions
+    // Por ahora lo dejamos para probar. Después lo securizamos
+    const response = await fetch("https://api.mercadopago.com/checkout/preferences", {
+        method: "POST",
+        headers: {
+            "Authorization": "Bearer APP_USR-167823975897982-080913-734805f8384dd186455918c28878456c-644517534", // PEGA TU ACCESS TOKEN AQUI SOLO PARA PROBAR
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            items: [{ title: "OnlyChat Premium Mensual", quantity: 1, unit_price: 3990 }],
+            payer: { email: user.email },
+            back_urls: { success: window.location.href + "?pago=ok", failure: window.location.href + "?pago=error" },
+            auto_return: "approved"
+        })
+    });
+    const data = await response.json();
+    window.location.href = data.init_point;
+}
+
+// Si pagó ok
+window.onload = async () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  if(urlParams.get('pago') === 'ok'){
+    const user = auth.currentUser;
+    if(user) await updateDoc(doc(db, "usuarios", user.uid), { premium: true });
+    alert("✅ Ya eres PREMIUM prota! Bienvenido al club");
+  }
+}
+</script>
 </body>
 </html>
