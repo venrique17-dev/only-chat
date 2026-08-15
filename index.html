@@ -5,43 +5,95 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ONLY CHAT 3.0 PREMIUM</title>
 <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-  body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 100vh; display: flex; justify-content: center; align-items: center; }
-  .login-box, .chat-box { background: white; border-radius: 20px; padding: 30px; width: 90%; max-width: 400px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
-  h1 { text-align: center; color: #667eea; margin-bottom: 10px; }
-  .premium-btn { background: linear-gradient(90deg, #667eea, #764ba2, #ff6b6b); color: white; border: none; padding: 12px; width: 100%; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 15px; }
+    * { box-sizing: border-box; }
+  body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 100vh; display: flex; justify-content: center; align-items: center; font-family: 'Segoe UI', sans-serif; margin: 0; }
+  .box { background: white; border-radius: 20px; padding: 30px; width: 90%; max-width: 400px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); text-align: center; }
+  h1 { color: #667eea; margin-bottom: 10px; }
+  .subtitle { color: #666; margin-bottom: 20px; }
+  input { width: 100%; padding: 12px; margin: 8px 0; border: 2px solid #ddd; border-radius: 10px; font-size: 15px; }
+  .btn { background: #667eea; color: white; border: none; padding: 12px; width: 100%; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 10px; }
+  .btn:hover { background: #556cd6; }
+  .premium-btn { background: linear-gradient(90deg, #667eea, #764ba2, #ff6b6b); color: white; border: none; padding: 14px; width: 100%; border-radius: 10px; font-weight: bold; font-size: 17px; cursor: pointer; margin-top: 20px; box-shadow: 0 4px 15px rgba(102,126,234,0.4); }
   .premium-btn:hover { transform: scale(1.02); }
-  input { width: 100%; padding: 12px; margin: 8px 0; border: 2px solid #ddd; border-radius: 10px; }
-  .btn { background: #667eea; color: white; border: none; padding: 12px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; }
+  #chatBox { display: none; }
+  #mensaje { color: green; font-weight: bold; margin-top: 10px; }
 </style>
 </head>
 <body>
 
-<div class="login-box" id="loginBox">
-  <h1>ONLY CHAT 3.0</h1>
-  <p style="text-align:center; color:gray; margin-bottom:20px;">Inicia sesión</p>
+<div class="box" id="loginBox">
+  <h1>ONLY CHAT 3.0 👑</h1>
+  <p class="subtitle">La IA más top de Chile</p>
   <input type="email" id="email" placeholder="Tu correo">
   <input type="password" id="pass" placeholder="Contraseña">
+  <button class="btn" onclick="registrar()">Registrarse Gratis</button>
   <button class="btn" onclick="login()">Entrar</button>
-  <button class="premium-btn" onclick="alert('Próximamente: WebPay $3.990/mes')">👑 Hacerse PREMIUM $3.990</button>
+  <button class="premium-btn" onclick="hacerPremium()">👑 Hacerse PREMIUM $3.990/mes</button>
+  <p id="mensaje"></p>
 </div>
 
-<div class="chat-box" id="chatBox" style="display:none;">
-  <h1>Bienvenido!</h1>
-  <p>Aquí irá el chat 3.0</p>
+<div class="box" id="chatBox">
+  <h1>Bienvenido 👑</h1>
+  <p>Ya estás dentro de ONLY CHAT 3.0</p>
+  <p>Aquí irá el chat premium...</p>
+  <button class="btn" onclick="logout()">Cerrar Sesión</button>
 </div>
 
-<script>
-function login(){
-  const email = document.getElementById('email').value;
-  if(email.includes('@')){
-    document.getElementById('loginBox').style.display = 'none';
-    document.getElementById('chatBox').style.display = 'block';
-    localStorage.setItem('user', email);
-  } else {
-    alert('Pon un correo válido prota')
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  // DATOS DE FIREBASE CORREGIDOS
+  const firebaseConfig = {
+    apiKey: "AIzaSyCnRn0q7Nb9JXJ6cOwuUD3Q5wyuzFFM_mg",
+    authDomain: "only-chat-3.firebaseapp.com",
+    projectId: "only-chat-3",
+    storageBucket: "only-chat-3.firebasestorage.app",
+    messagingSenderId: "516637400731",
+    appId: "1:516637400731:web:fed2ae7aa6a7200580b03e"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // Si ya está logeado, mostrar chat
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      document.getElementById('loginBox').style.display = 'none';
+      document.getElementById('chatBox').style.display = 'block';
+    }
+  });
+
+  window.registrar = async () => {
+    const email = document.getElementById('email').value;
+    const pass = document.getElementById('pass').value;
+    try {
+      const userCred = await createUserWithEmailAndPassword(auth, email, pass);
+      await setDoc(doc(db, "usuarios", userCred.user.uid), {email: email, premium: false, fecha: new Date()});
+      document.getElementById('mensaje').innerText = "✅ Registrado! Ya puedes entrar";
+    } catch(e) { alert("Error: " + e.message) }
   }
-}
+
+  window.login = async () => {
+    const email = document.getElementById('email').value;
+    const pass = document.getElementById('pass').value;
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+      document.getElementById('mensaje').innerText = "✅ Bienvenido!";
+    } catch(e) { alert("Error: " + e.message) }
+  }
+
+  window.logout = async () => {
+    await signOut(auth);
+    document.getElementById('loginBox').style.display = 'block';
+    document.getElementById('chatBox').style.display = 'none';
+  }
+
+  window.hacerPremium = () => {
+    alert("Próximamente: WebPay $3.990/mes\nAquí conectaremos el pago y pondremos premium: true");
+  }
 </script>
 
 </body>
