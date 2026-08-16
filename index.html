@@ -103,9 +103,10 @@
 
   async function logout() { await signOut(auth); }
 
-  // 6. FUNCION ENVIAR MENSAJE
-  async function enviarMensaje() {
-    const texto = document.getElementById('textoMensaje').value;
+  // 6. FUNCION ENVIAR MENSAJE - CORREGIDA
+async function enviarMensaje() {
+    const inputMensaje = document.getElementById('textoMensaje'); // guardamos el input
+    const texto = inputMensaje.value;
     if(texto.trim() === "") return;
     
     await addDoc(collection(db, "mensajes"), {
@@ -113,9 +114,10 @@
       email: usuarioActual.email,
       fecha: serverTimestamp()
     });
-    document.getElementById('textoMensaje').value = "";
-  }
-
+    
+    inputMensaje.value = ""; // AQUI LA BORRAMOS PROTA
+    inputMensaje.focus(); // y dejamos el cursor listo para escribir
+}
   // 7. ESCUCHAR MENSAJES EN TIEMPO REAL
   function cargarMensajes() {
     const q = query(collection(db, "mensajes"), orderBy("fecha"));
