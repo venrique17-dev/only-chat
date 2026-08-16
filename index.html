@@ -102,22 +102,22 @@
   }
 
   async function logout() { await signOut(auth); }
-
-  
-Enrique venegas labbe <venrique17@gmail.com>
-12:55 (hace 0 minutos)
-para mí
-
-// 6. FUNCION ENVIAR MENSAJE - VERSION DEFINITIVA
+// 6. FUNCION ENVIAR MENSAJE
 function enviarMensaje() {
-    const inputMensaje = document.getElementById('textoMensaje');
-    const texto = inputMensaje.value.trim();
+    const input = document.getElementById('textoMensaje');
+    const texto = input.value.trim();
     
     if(texto === "") return;
     
-    // Borramos ANTES de enviar para que sea instantáneo
-    inputMensaje.value = ""; 
-    inputMensaje.focus();
+    input.value = "";
+    input.focus();
+
+    addDoc(collection(db, "mensajes"), {
+      texto: texto,
+      email: usuarioActual.email,
+      fecha: serverTimestamp()
+    });
+}
 
     // Enviamos a Firebase
     addDoc(collection(db, "mensajes"), {
