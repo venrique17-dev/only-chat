@@ -1,124 +1,111 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ONLY CHAT 3.0 PREMIUM</title>
-<style>
-    * { box-sizing: border-box; }
-  body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 100vh; display: flex; justify-content: center; align-items: center; font-family: 'Segoe UI', sans-serif; margin: 0; }
-  .box { background: white; border-radius: 20px; padding: 30px; width: 90%; max-width: 400px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); text-align: center; }
-  h1 { color: #667eea; margin-bottom: 10px; }
-  .subtitle { color: #666; margin-bottom: 20px; }
-  input { width: 100%; padding: 12px; margin: 8px 0; border: 2px solid #ddd; border-radius: 10px; font-size: 15px; }
-  .btn { background: #667eea; color: white; border: none; padding: 12px; width: 100%; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 10px; }
-  .btn:hover { background: #556cd6; }
-  .premium-btn { background: linear-gradient(90deg, #667eea, #764ba2, #ff6b6b); color: white; border: none; padding: 14px; width: 100%; border-radius: 10px; font-weight: bold; font-size: 17px; cursor: pointer; margin-top: 20px; box-shadow: 0 4px 15px rgba(102,126,234,0.4); }
-  .premium-btn:hover { transform: scale(1.02); }
-  #chatBox { display: none; }
-  #mensaje { color: green; font-weight: bold; margin-top: 10px; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OnlyChat</title>
+  <style>
+    body { font-family: Arial; background: #111; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    .container { background: #222; padding: 30px; border-radius: 10px; width: 300px; text-align: center; }
+    input { width: 90%; padding: 10px; margin: 10px 0; border: none; border-radius: 5px; }
+    .btn { width: 100%; padding: 10px; margin: 5px 0; background: #00aaff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    .btn:hover { background: #0088cc; }
+    .oculto { display: none; }
+  </style>
 </head>
 <body>
 
-<div class="box" id="loginBox">
-  <h1>ONLY CHAT 3.0 👑</h1>
-  <p class="subtitle">La IA más top de Chile</p>
-  <input type="email" id="email" placeholder="Tu correo">
-  <input type="password" id="pass" placeholder="Contraseña">
-  <button id="btnRegistrar" class="btn">Registrarse Gratis</button>
-<button id="btnLogin" class="btn">Entrar</button>
-<button id="btnPremium" class="btn">Hacerse Premium</button>
+<div class="container" id="loginContainer">
+  <h2>OnlyChat</h2>
+  <input type="email" id="email" placeholder="Correo">
+  <input type="password" id="password" placeholder="Contraseña">
+  <button class="btn" id="btnLogin">Iniciar Sesión</button>
+  <button class="btn" id="btnRegistrar">Registrarse</button>
   <p id="mensaje"></p>
 </div>
 
-<div class="box" id="chatBox">
-  <h1>Bienvenido 👑</h1>
-  <p>Ya estás dentro de ONLY CHAT 3.0</p>
-  <p>Aquí irá el chat premium...</p>
-  <button class="btn" id="btnLogout">Cerrar Sesion</button>
+<div class="container oculto" id="appContainer">
+  <h2>Bienvenido a OnlyChat</h2>
+  <p id="userEmail"></p>
+  <button class="btn" id="btnLogout">Cerrar Sesión</button>
 </div>
 
-<script src="https://sdk.mercadopago.com/js/v2"></script>
-  <script type="module">
-  // FIREBASE
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getFirestore, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+<script type="module">
+  // 1. IMPORTAR FIREBASE
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+  // 2. TU CONFIGURACION DE FIREBASE - CAMBIALA POR LA TUYA
   const firebaseConfig = {
- apiKey: "AIzaSyALTX2f3zGarr7QnXxknZlMzDgOcswSgLs",
+  apiKey: "AIzaSyALTX2f3zGarr7QnXxknZlMzDgOcswSgLs",
   authDomain: "onlychat-7e979.firebaseapp.com",
   databaseURL: "https://onlychat-7e979-default-rtdb.firebaseio.com",
   projectId: "onlychat-7e979",
   storageBucket: "onlychat-7e979.firebasestorage.app",
   messagingSenderId: "728640682270",
   appId: "1:728640682270:web:4a962529e75a103c64b10f"
-};
+  };
+
+  // 3. INICIALIZAR
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  // LOGIN Y REGISTRO
-  window.registrar = async () => {
+  // 4. OBTENER ELEMENTOS
+  const loginContainer = document.getElementById('loginContainer');
+  const appContainer = document.getElementById('appContainer');
+  const mensaje = document.getElementById('mensaje');
+  const userEmail = document.getElementById('userEmail');
+
+  // 5. FUNCIONES
+  async function registrar() {
     const email = document.getElementById('email').value;
-    const pass = document.getElementById('pass').value;
-    try{
-      const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-      await setDoc(doc(db, "usuarios", userCredential.user.uid), { email: email, premium: false, fecha: new Date() });
-      alert("✅ Registrado! Ya puedes entrar");
-    }catch(e){ alert("Error: " + e.message); }
+    const password = document.getElementById('password').value;
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await setDoc(doc(db, "usuarios", userCredential.user.uid), {
+        email: email,
+        premium: false
+      });
+      mensaje.innerText = "Registrado con éxito";
+    } catch (error) {
+      mensaje.innerText = error.message;
+    }
   }
 
-  window.entrar = async () => {
+  async function login() {
     const email = document.getElementById('email').value;
-    const pass = document.getElementById('pass').value;
-    try{ await signInWithEmailAndPassword(auth, email, pass); }
-    catch(e){ alert("Error: " + e.message); }
+    const password = document.getElementById('password').value;
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      mensaje.innerText = "Login exitoso";
+    } catch (error) {
+      mensaje.innerText = error.message;
+    }
   }
 
-  window.logout = async () => {
-      await signOut(auth);
-      document.getElementById('loginBox').style.display = 'block';
-      document.getElementById('chatBox').style.display = "none";
+  async function logout() {
+    await signOut(auth);
   }
 
-  // MERCADOPAGO - SOLO PUBLIC KEY VA AQUÍ
-  const mp = new MercadoPago("APP_USR-167823975897982-080913-734805f8384dd186455918c28878456c-644517534"); // <-- PEGA TU PUBLIC KEY AQUÍ
-
-  onAuthStateChanged(auth, async (user) => {
-    if(user){
-      document.getElementById('loginBox').style.display = 'none';
-      document.getElementById('chatBox').style.display = 'block';
-      
-      const docSnap = await getDoc(doc(db, "usuarios", user.uid));
-      if(docSnap.exists() && docSnap.data().premium === false){
-        document.getElementById('btnPremium').style.display = 'block';
-      }
+  // 6. VER SI EL USUARIO ESTA LOGEADO
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      loginContainer.classList.add('oculto');
+      appContainer.classList.remove('oculto');
+      userEmail.innerText = "Logeado como: " + user.email;
+    } else {
+      loginContainer.classList.remove('oculto');
+      appContainer.classList.add('oculto');
     }
   });
 
-  // ESTO LO MEJORAMOS DESPUÉS CON NETLIFY FUNCTION
-  // POR AHORA USAMOS LINK DIRECTO PARA PROBAR
-  document.getElementById('btnPremium').onclick = async () => {
-      const user = auth.currentUser;
-      if(!user) return alert("Debes iniciar sesión");
-      
-      // Creamos pago directo - PONER ACCESS TOKEN EN NETLIFY DESPUÉS
-      alert("PROTA: Para probar, ve a MercadoPago > Checkout > Crear link de pago de $3990 y lo ponemos aquí");
-  }
+  // 7. CONECTAR BOTONES
+  document.getElementById('btnLogin').addEventListener('click', login);
+  document.getElementById('btnRegistrar').addEventListener('click', registrar);
+  document.getElementById('btnLogout').addEventListener('click', logout);
 
-  // VERIFICAR SI VOLVIÓ DE PAGAR
-  window.onload = async () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    if(urlParams.get('pago') === 'ok'){
-      const user = auth.currentUser;
-      if(user) await updateDoc(doc(db, "usuarios", user.uid), { premium: true });
-      alert("✅ Ya eres PREMIUM prota!");
-    }
-  }
-document.getElementById('btnRegistrar').addEventListener('click', registrar);
-document.getElementById('btnLogin').addEventListener('click', login);
-document.getElementById('btnPremium').addEventListener('click', hacerPremium); 
-document.getElementById('btnLogout').addEventListener('click',logout);     
 </script>
+</body>
+</html>
