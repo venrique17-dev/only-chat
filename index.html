@@ -103,17 +103,32 @@
 
   async function logout() { await signOut(auth); }
 
-  // 6. FUNCION ENVIAR MENSAJE - CORREGIDA
-async function enviarMensaje() {
-    const inputMensaje = document.getElementById('textoMensaje'); // guardamos el input
-    const texto = inputMensaje.value;
-    if(texto.trim() === "") return;
+  
+Enrique venegas labbe <venrique17@gmail.com>
+12:55 (hace 0 minutos)
+para mí
+
+// 6. FUNCION ENVIAR MENSAJE - VERSION DEFINITIVA
+function enviarMensaje() {
+    const inputMensaje = document.getElementById('textoMensaje');
+    const texto = inputMensaje.value.trim();
     
-    await addDoc(collection(db, "mensajes"), {
+    if(texto === "") return;
+    
+    // Borramos ANTES de enviar para que sea instantáneo
+    inputMensaje.value = ""; 
+    inputMensaje.focus();
+
+    // Enviamos a Firebase
+    addDoc(collection(db, "mensajes"), {
       texto: texto,
       email: usuarioActual.email,
       fecha: serverTimestamp()
+    }).catch((error) => {
+      console.error("Error enviando mensaje: ", error);
+      alert("Error al enviar: " + error.message);
     });
+}
     
     inputMensaje.value = ""; // AQUI LA BORRAMOS PROTA
     inputMensaje.focus(); // y dejamos el cursor listo para escribir
