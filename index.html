@@ -36,7 +36,7 @@
   <h1>Bienvenido 👑</h1>
   <p>Ya estás dentro de ONLY CHAT 3.0</p>
   <p>Aquí irá el chat premium...</p>
-  <button class="btn" onclick="logout()">Cerrar Sesión</button>
+  <button class="btn" id="btnLogout">Cerrar Sesion</button>
 </div>
 
 <script src="https://sdk.mercadopago.com/js/v2"></script>
@@ -119,5 +119,6 @@
   }
 document.getElementById('btnRegistrar').addEventListener('click', registrar);
 document.getElementById('btnLogin').addEventListener('click', login);
-document.getElementById('btnPremium').addEventListener('click', hacerPremium);     
+document.getElementById('btnPremium').addEventListener('click', hacerPremium); 
+document.getElementById('btnLogout').addEventListener('click',logout);     
 </script>
