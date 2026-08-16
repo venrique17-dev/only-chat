@@ -5,16 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OnlyChat</title>
   <style>
-    body { font-family: Arial; background: #111; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; }
-    .container { background: #222; padding: 30px; border-radius: 10px; width: 300px; text-align: center; }
+    body { font-family: Arial; background: #111; color: white; margin: 0; }
+    .container { background: #222; padding: 20px; border-radius: 10px; width: 350px; margin: 50px auto; text-align: center; }
     input { width: 90%; padding: 10px; margin: 10px 0; border: none; border-radius: 5px; }
     .btn { width: 100%; padding: 10px; margin: 5px 0; background: #00aaff; color: white; border: none; border-radius: 5px; cursor: pointer; }
     .btn:hover { background: #0088cc; }
     .oculto { display: none; }
+    
+    /* ESTILOS DEL CHAT */
+    #chatContainer { width: 90%; max-width: 600px; margin: 20px auto; }
+    #mensajes { background: #1a1a1a; height: 400px; overflow-y: scroll; padding: 10px; border-radius: 10px; text-align: left; }
+    .mensaje { margin: 8px 0; padding: 8px; background: #333; border-radius: 5px; }
+    .mensaje b { color: #00aaff; }
+    #chatInput { display: flex; gap: 10px; margin-top: 10px; }
+    #chatInput input { flex: 1; }
+    #chatInput button { width: 100px; }
+    .header { display: flex; justify-content: space-between; align-items: center; }
   </style>
 </head>
 <body>
 
+<!-- LOGIN -->
 <div class="container" id="loginContainer">
   <h2>OnlyChat</h2>
   <input type="email" id="email" placeholder="Correo">
@@ -24,21 +35,31 @@
   <p id="mensaje"></p>
 </div>
 
-<div class="container oculto" id="appContainer">
-  <h2>Bienvenido a OnlyChat</h2>
-  <p id="userEmail"></p>
-  <button class="btn" id="btnLogout">Cerrar Sesión</button>
+<!-- CHAT -->
+<div class="container oculto" id="chatContainer">
+  <div class="header">
+    <h2>OnlyChat</h2>
+    <button class="btn" id="btnLogout" style="width:120px;">Salir</button>
+  </div>
+  <p>Logeado como: <span id="userEmail"></span></p>
+  
+  <div id="mensajes"></div>
+  
+  <div id="chatInput">
+    <input type="text" id="textoMensaje" placeholder="Escribe un mensaje...">
+    <button class="btn" id="btnEnviar">Enviar</button>
+  </div>
 </div>
 
 <script type="module">
   // 1. IMPORTAR FIREBASE
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   // 2. TU CONFIGURACION DE FIREBASE - CAMBIALA POR LA TUYA
   const firebaseConfig = {
-  apiKey: "AIzaSyALTX2f3zGarr7QnXxknZlMzDgOcswSgLs",
+    apiKey: "AIzaSyALTX2f3zGarr7QnXxknZlMzDgOcswSgLs",
   authDomain: "onlychat-7e979.firebaseapp.com",
   databaseURL: "https://onlychat-7e979-default-rtdb.firebaseio.com",
   projectId: "onlychat-7e979",
@@ -52,59 +73,83 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  // 4. OBTENER ELEMENTOS
+  // 4. VARIABLES GLOBALES
+  let usuarioActual = null;
   const loginContainer = document.getElementById('loginContainer');
-  const appContainer = document.getElementById('appContainer');
-  const mensaje = document.getElementById('mensaje');
-  const userEmail = document.getElementById('userEmail');
+  const chatContainer = document.getElementById('chatContainer');
+  const mensajesDiv = document.getElementById('mensajes');
+  const userEmailSpan = document.getElementById('userEmail');
 
-  // 5. FUNCIONES
+  // 5. FUNCIONES LOGIN/REGISTRO
   async function registrar() {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      await setDoc(doc(db, "usuarios", userCredential.user.uid), {
-        email: email,
-        premium: false
-      });
-      mensaje.innerText = "Registrado con éxito";
-    } catch (error) {
-      mensaje.innerText = error.message;
-    }
+      await setDoc(doc(db, "usuarios", userCredential.user.uid), { email: email });
+    } catch (error) { document.getElementById('mensaje').innerText = error.message; }
   }
 
   async function login() {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      mensaje.innerText = "Login exitoso";
-    } catch (error) {
-      mensaje.innerText = error.message;
-    }
+    try { await signInWithEmailAndPassword(auth, email, password); } 
+    catch (error) { document.getElementById('mensaje').innerText = error.message; }
   }
 
-  async function logout() {
-    await signOut(auth);
+  async function logout() { await signOut(auth); }
+
+  // 6. FUNCION ENVIAR MENSAJE
+  async function enviarMensaje() {
+    const texto = document.getElementById('textoMensaje').value;
+    if(texto.trim() === "") return;
+    
+    await addDoc(collection(db, "mensajes"), {
+      texto: texto,
+      email: usuarioActual.email,
+      fecha: serverTimestamp()
+    });
+    document.getElementById('textoMensaje').value = "";
   }
 
-  // 6. VER SI EL USUARIO ESTA LOGEADO
+  // 7. ESCUCHAR MENSAJES EN TIEMPO REAL
+  function cargarMensajes() {
+    const q = query(collection(db, "mensajes"), orderBy("fecha"));
+    onSnapshot(q, (snapshot) => {
+      mensajesDiv.innerHTML = "";
+      snapshot.forEach((doc) => {
+        const msg = doc.data();
+        mensajesDiv.innerHTML += `<div class="mensaje"><b>${msg.email}:</b> ${msg.texto}</div>`;
+      });
+      mensajesDiv.scrollTop = mensajesDiv.scrollHeight; // bajar scroll
+    });
+  }
+
+  // 8. VER SI EL USUARIO ESTA LOGEADO
   onAuthStateChanged(auth, (user) => {
     if (user) {
+      usuarioActual = user;
       loginContainer.classList.add('oculto');
-      appContainer.classList.remove('oculto');
-      userEmail.innerText = "Logeado como: " + user.email;
+      chatContainer.classList.remove('oculto');
+      userEmailSpan.innerText = user.email;
+      cargarMensajes(); // empieza a escuchar el chat
     } else {
+      usuarioActual = null;
       loginContainer.classList.remove('oculto');
-      appContainer.classList.add('oculto');
+      chatContainer.classList.add('oculto');
     }
   });
 
-  // 7. CONECTAR BOTONES
+  // 9. CONECTAR BOTONES
   document.getElementById('btnLogin').addEventListener('click', login);
   document.getElementById('btnRegistrar').addEventListener('click', registrar);
   document.getElementById('btnLogout').addEventListener('click', logout);
+  document.getElementById('btnEnviar').addEventListener('click', enviarMensaje);
+  
+  // Enviar con Enter
+  document.getElementById('textoMensaje').addEventListener('keypress', (e) => {
+    if(e.key === 'Enter') enviarMensaje();
+  });
 
 </script>
 </body>
