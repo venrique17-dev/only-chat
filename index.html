@@ -26,9 +26,9 @@
   <p class="subtitle">La IA más top de Chile</p>
   <input type="email" id="email" placeholder="Tu correo">
   <input type="password" id="pass" placeholder="Contraseña">
-  <button class="btn" onclick="registrar()">Registrarse Gratis</button>
-  <button id="btnLogin" class="btn">Entrar</button>
-  <button id="btnPremium" class="btn">Hacerse Premium</button>
+  <button id="btnRegistrar" class="btn">Registrarse Gratis</button>
+<button id="btnLogin" class="btn">Entrar</button>
+<button id="btnPremium" class="btn">Hacerse Premium</button>
   <p id="mensaje"></p>
 </div>
 
@@ -117,4 +117,7 @@
       alert("✅ Ya eres PREMIUM prota!");
     }
   }
+document.getElementById('btnRegistrar').addEventListener('click', registrar);
+document.getElementById('btnLogin').addEventListener('click', login);
+document.getElementById('btnPremium').addEventListener('click', hacerPremium);     
 </script>
