@@ -1,177 +1,114 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OnlyChat</title>
-  <style>
-    body { font-family: Arial; background: #111; color: white; margin: 0; }
-    .container { background: #222; padding: 20px; border-radius: 10px; width: 350px; margin: 50px auto; text-align: center; }
-    input { width: 90%; padding: 10px; margin: 10px 0; border: none; border-radius: 5px; }
-    .btn { width: 100%; padding: 10px; margin: 5px 0; background: #00aaff; color: white; border: none; border-radius: 5px; cursor: pointer; }
-    .btn:hover { background: #0088cc; }
-    .oculto { display: none; }
-    
-    /* ESTILOS DEL CHAT */
-    #chatContainer { width: 90%; max-width: 600px; margin: 20px auto; }
-    #mensajes { background: #1a1a1a; height: 400px; overflow-y: scroll; padding: 10px; border-radius: 10px; text-align: left; }
-    .mensaje { margin: 8px 0; padding: 8px; background: #333; border-radius: 5px; }
-    .mensaje b { color: #00aaff; }
-    #chatInput { display: flex; gap: 10px; margin-top: 10px; }
-    #chatInput input { flex: 1; }
-    #chatInput button { width: 100px; }
-    .header { display: flex; justify-content: space-between; align-items: center; }
-  </style>
+    <meta charset="UTF-8">
+    <title>OnlyChat</title>
+    <style>
+        body { font-family: Arial; background: #121212; color: white; text-align: center; padding: 20px; }
+        #app { max-width: 600px; margin: auto; }
+        #mensajes { background: #1a1a1a; height: 400px; overflow-y: scroll; border-radius: 10px; padding: 10px; text-align: left; }
+        .mensaje { margin-bottom: 10px; }
+        .mensaje strong { color: #00aaff; }
+        input, button { padding: 10px; border-radius: 5px; border: none; }
+        #chatInput { display: flex; gap: 10px; margin-top: 10px; }
+        #textoMensaje { flex-grow: 1; }
+        button { background: #00aaff; color: white; cursor: pointer; }
+    </style>
 </head>
 <body>
+    <div id="app">
+        <div id="auth">
+            <h1>OnlyChat</h1>
+            <input type="email" id="email" placeholder="Correo">
+            <input type="password" id="password" placeholder="Contraseña">
+            <button onclick="registrar()">Registrar</button>
+            <button onclick="login()">Ingresar</button>
+        </div>
 
-<!-- LOGIN -->
-<div class="container" id="loginContainer">
-  <h2>OnlyChat</h2>
-  <input type="email" id="email" placeholder="Correo">
-  <input type="password" id="password" placeholder="Contraseña">
-  <button class="btn" id="btnLogin">Iniciar Sesión</button>
-  <button class="btn" id="btnRegistrar">Registrarse</button>
-  <p id="mensaje"></p>
-</div>
+        <div id="chat" style="display:none;">
+            <p>Logeado como: <span id="userEmail"></span> <button onclick="logout()">Salir</button></p>
+            <div id="mensajes"></div>
+            <div id="chatInput">
+                <input type="text" id="textoMensaje" placeholder="Escribe un mensaje">
+                <button onclick="enviarMensaje()">Enviar</button>
+            </div>
+        </div>
+    </div>
 
-<!-- CHAT -->
-<div class="container oculto" id="chatContainer">
-  <div class="header">
-    <h2>OnlyChat</h2>
-    <button class="btn" id="btnLogout" style="width:120px;">Salir</button>
-  </div>
-  <p>Logeado como: <span id="userEmail"></span></p>
-  
-  <div id="mensajes"></div>
-  
-  <div id="chatInput">
-    <input type="text" id="textoMensaje" placeholder="Escribe un mensaje...">
-    <button class="btn" id="btnEnviar">Enviar</button>
-  </div>
-</div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-<script type="module">
-  // 1. IMPORTAR FIREBASE
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-  // 2. TU CONFIGURACION DE FIREBASE - PEGA LA TUYA AQUI
-  const firebaseConfig = {
-    apiKey: "AIzaSyALTX2f3zGarr7QnXxknZlMzDgOcswSgLs",
+        const firebaseConfig = {
+          apiKey: "AIzaSyALTX2f3zGarr7QnXxknZlMzDgOcswSgLs",
   authDomain: "onlychat-7e979.firebaseapp.com",
   databaseURL: "https://onlychat-7e979-default-rtdb.firebaseio.com",
   projectId: "onlychat-7e979",
   storageBucket: "onlychat-7e979.firebasestorage.app",
   messagingSenderId: "728640682270",
   appId: "1:728640682270:web:4a962529e75a103c64b10f"
-  };
+        };
 
-  // 3. INICIALIZAR
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        let usuarioActual = null;
 
-  // 4. VARIABLES GLOBALES - YA CORREGIDO chatContainer
-  let usuarioActual = null;
-  const loginContainer = document.getElementById('loginContainer');
-  const chatContainer = document.getElementById('chatContainer'); // YA ESTA BIEN
-  const mensajesDiv = document.getElementById('mensajes');
-  const userEmailSpan = document.getElementById('userEmail');
+        const authDiv = document.getElementById('auth');
+        const chatDiv = document.getElementById('chat');
 
-  // 5. FUNCIONES LOGIN/REGISTRO
-  async function registrar() {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      await setDoc(doc(db, "usuarios", userCredential.user.uid), { email: email });
-      document.getElementById('mensaje').innerText = "Registrado con éxito";
-    } catch (error) { document.getElementById('mensaje').innerText = error.message; }
-  }
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                usuarioActual = user;
+                document.getElementById('userEmail').innerText = user.email;
+                authDiv.style.display = 'none';
+                chatDiv.style.display = 'block';
+                cargarMensajes();
+            } else {
+                usuarioActual = null;
+                authDiv.style.display = 'block';
+                chatDiv.style.display = 'none';
+            }
+        });
 
-  async function login() {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    try { 
-      await signInWithEmailAndPassword(auth, email, password); 
-      document.getElementById('mensaje').innerText = "Login exitoso";
-    } 
-    catch (error) { document.getElementById('mensaje').innerText = error.message; }
-  }
+        window.registrar = () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            createUserWithEmailAndPassword(auth, email, password);
+        }
+        window.login = () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            signInWithEmailAndPassword(auth, email, password);
+        }
+        window.logout = () => signOut(auth);
 
-  async function logout() { await signOut(auth); }
-// 6. FUNCION ENVIAR MENSAJE
-function enviarMensaje() {
-    const input = document.getElementById('textoMensaje');
-    const texto = input.value.trim();
-    
-    if(texto === "") return;
-    
-    input.value = "";
-    input.focus();
+        function cargarMensajes() {
+            const q = query(collection(db, "mensajes"), orderBy("fecha"));
+            onSnapshot(q, (snapshot) => {
+                const mensajesDiv = document.getElementById('mensajes');
+                mensajesDiv.innerHTML = "";
+                snapshot.forEach((doc) => {
+                    const msg = doc.data();
+                    mensajesDiv.innerHTML += `<div class="mensaje"><strong>${msg.email}:</strong> ${msg.texto}</div>`;
+                });
+                mensajesDiv.scrollTop = mensajesDiv.scrollHeight;
+            });
+        }
 
-    addDoc(collection(db, "mensajes"), {
-      texto: texto,
-      email: usuarioActual.email,
-      fecha: serverTimestamp()
-    });
-}
-
-    // Enviamos a Firebase
-    addDoc(collection(db, "mensajes"), {
-      texto: texto,
-      email: usuarioActual.email,
-      fecha: serverTimestamp()
-    }).catch((error) => {
-      console.error("Error enviando mensaje: ", error);
-      alert("Error al enviar: " + error.message);
-    });
-}
-    
-    inputMensaje.value = ""; // AQUI LA BORRAMOS PROTA
-    inputMensaje.focus(); // y dejamos el cursor listo para escribir
-}
-  // 7. ESCUCHAR MENSAJES EN TIEMPO REAL
-  function cargarMensajes() {
-    const q = query(collection(db, "mensajes"), orderBy("fecha"));
-    onSnapshot(q, (snapshot) => {
-      mensajesDiv.innerHTML = "";
-      snapshot.forEach((doc) => {
-        const msg = doc.data();
-        mensajesDiv.innerHTML += `<div class="mensaje"><b>${msg.email}:</b> ${msg.texto}</div>`;
-      });
-      mensajesDiv.scrollTop = mensajesDiv.scrollHeight; // bajar scroll
-    });
-  }
-
-  // 8. VER SI EL USUARIO ESTA LOGEADO - YA CORREGIDO chatContainer
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      usuarioActual = user;
-      loginContainer.classList.add('oculto');
-      chatContainer.classList.remove('oculto'); // YA ESTA BIEN
-      userEmailSpan.innerText = user.email;
-      cargarMensajes(); // empieza a escuchar el chat
-    } else {
-      usuarioActual = null;
-      loginContainer.classList.remove('oculto');
-      chatContainer.classList.add('oculto'); // YA ESTA BIEN
-    }
-  });
-
-  // 9. CONECTAR BOTONES
-  document.getElementById('btnLogin').addEventListener('click', login);
-  document.getElementById('btnRegistrar').addEventListener('click', registrar);
-  document.getElementById('btnLogout').addEventListener('click', logout);
-  document.getElementById('btnEnviar').addEventListener('click', enviarMensaje);
-  
-  // Enviar con Enter
-  document.getElementById('textoMensaje').addEventListener('keypress', (e) => {
-    if(e.key === 'Enter') enviarMensaje();
-  });
-
-</script>
+        window.enviarMensaje = function() {
+            const input = document.getElementById('textoMensaje');
+            const texto = input.value.trim();
+            if(texto === "") return;
+            input.value = "";
+            input.focus();
+            addDoc(collection(db, "mensajes"), {
+              texto: texto,
+              email: usuarioActual.email,
+              fecha: serverTimestamp()
+            });
+        }
+    </script>
 </body>
 </html>
