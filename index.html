@@ -29,7 +29,7 @@
             <p>Logeado como: <span id="userEmail"></span> <button onclick="logout()">Salir</button></p>
             <div id="mensajes"></div>
             <div id="chatInput">
-                <input type="text" id="textoMensaje" placeholder="Escribe un mensaje">
+                <input type="text" id="textoMensaje" placeholder="Escribe un mensaje" onekeydown="if(event.key==='Enter'){enviarMensaje()}">
                 <button onclick="enviarMensaje()">Enviar</button>
             </div>
         </div>
