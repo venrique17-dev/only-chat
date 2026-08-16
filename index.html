@@ -57,7 +57,7 @@
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  // 2. TU CONFIGURACION DE FIREBASE - CAMBIALA POR LA TUYA
+  // 2. TU CONFIGURACION DE FIREBASE - PEGA LA TUYA AQUI
   const firebaseConfig = {
     apiKey: "AIzaSyALTX2f3zGarr7QnXxknZlMzDgOcswSgLs",
   authDomain: "onlychat-7e979.firebaseapp.com",
@@ -73,10 +73,10 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  // 4. VARIABLES GLOBALES
+  // 4. VARIABLES GLOBALES - YA CORREGIDO chatContainer
   let usuarioActual = null;
   const loginContainer = document.getElementById('loginContainer');
-  const chatContainer = document.getElementById('chatContainer');
+  const chatContainer = document.getElementById('chatContainer'); // YA ESTA BIEN
   const mensajesDiv = document.getElementById('mensajes');
   const userEmailSpan = document.getElementById('userEmail');
 
@@ -87,13 +87,17 @@
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await setDoc(doc(db, "usuarios", userCredential.user.uid), { email: email });
+      document.getElementById('mensaje').innerText = "Registrado con éxito";
     } catch (error) { document.getElementById('mensaje').innerText = error.message; }
   }
 
   async function login() {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
-    try { await signInWithEmailAndPassword(auth, email, password); } 
+    try { 
+      await signInWithEmailAndPassword(auth, email, password); 
+      document.getElementById('mensaje').innerText = "Login exitoso";
+    } 
     catch (error) { document.getElementById('mensaje').innerText = error.message; }
   }
 
@@ -125,18 +129,18 @@
     });
   }
 
-  // 8. VER SI EL USUARIO ESTA LOGEADO
+  // 8. VER SI EL USUARIO ESTA LOGEADO - YA CORREGIDO chatContainer
   onAuthStateChanged(auth, (user) => {
     if (user) {
       usuarioActual = user;
       loginContainer.classList.add('oculto');
-      chatContainer.classList.remove('oculto');
+      chatContainer.classList.remove('oculto'); // YA ESTA BIEN
       userEmailSpan.innerText = user.email;
       cargarMensajes(); // empieza a escuchar el chat
     } else {
       usuarioActual = null;
       loginContainer.classList.remove('oculto');
-      chatContainer.classList.add('oculto');
+      chatContainer.classList.add('oculto'); // YA ESTA BIEN
     }
   });
 
